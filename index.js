@@ -445,7 +445,7 @@ bot.on('callback_query', (query) => {
     bot.sendMessage(ADMIN_CHAT_ID, `Заказ для пользователя с ID ${userId} был выполнен.`);
 
     // Сообщаем покупателю, что его заказ выполнен
-    bot.sendMessage(userId, 'Ваш заказ был выполнен! Спасибо за покупку.');
+    bot.sendMessage(userId, 'Ваш заказ был выполнен! Спасибо за покупку. Пожалуйста, напишите отзыв в группе и помогите улучшить качество работы. https://t.me/+Q6biAiRMhNszZGUy');
 
     return;
   }else if (data === 'deposit') {
