@@ -1,18 +1,16 @@
 const express = require('express');
 const app = express();
 
-const port = process.env.PORT || 3000;
+app.use(express.json());
 
-app.listen(port, () => {
-  console.log(`Listening on port ${port}, even though it's not required`);
-});
+const port = process.env.PORT || 3000;
 
 const TelegramApi = require('node-telegram-bot-api');
 const admin = require('firebase-admin');
 require('firebase/database');
 const serviceAccount = require('/etc/secrets/serviceAccountKey.json');
 const token = process.env.token;
-const bot = new TelegramApi(token, { polling: true });
+const bot = new TelegramApi(token);
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHm-1oPvUHfGUvHCg8Y_xfjHHBFEvfNf4",
@@ -29,6 +27,15 @@ admin.initializeApp(firebaseConfig);
 
 // Получаем доступ к Realtime Database
 const database = admin.database();
+
+const URL = process.env.WEBHOOK_URL || 'https://xamuraucshop.onrender.com/telegram-webhook';
+
+bot.setWebHook(`${URL}/bot${token}`);
+
+app.post(`/bot${token}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200); // Отправляем успешный ответ для Telegram
+});
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID группы для отправки сообщений администраторам
 
@@ -452,4 +459,6 @@ bot.on('callback_query', (query) => {
 });
 
 // Запуск бота
-bot.on('polling_error', (error) => console.log(error));
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
