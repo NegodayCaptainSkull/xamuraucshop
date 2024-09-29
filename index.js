@@ -28,7 +28,7 @@ admin.initializeApp(firebaseConfig);
 // Получаем доступ к Realtime Database
 const database = admin.database();
 
-const URL = 'https://xamuraucshop.onrender.com/telegram-webhook';
+const URL = 'https://xamuraucshop.onrender.com';
 
 bot.setWebHook(`${URL}/bot${token}`);
 
