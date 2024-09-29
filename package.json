@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "concurrently": "^9.0.1",
+    "express": "^4.21.0",
     "firebase": "^10.13.2",
     "firebase-admin": "^12.5.0",
     "node-telegram-bot-api": "^0.66.0",

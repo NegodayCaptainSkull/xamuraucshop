@@ -1,3 +1,12 @@
+const express = require('express');
+const app = express();
+
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}, even though it's not required`);
+});
+
 const TelegramApi = require('node-telegram-bot-api');
 const admin = require('firebase-admin');
 require('firebase/database');
