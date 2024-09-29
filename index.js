@@ -387,9 +387,6 @@ bot.on('message', (msg) => {
       });
     });
   }
-
-  // Пересылка всех сообщений администраторам
-  bot.forwardMessage(ADMIN_CHAT_ID, chatId, msg.message_id);
 });
 
 // Обработка нажатий на inline-кнопки
