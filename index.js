@@ -137,7 +137,9 @@ bot.onText(/\/start (.+)/, (msg, match) => {
   // Проверяем, что пользователь не является своим собственным рефералом
   if (referrerId && referrerId !== chatId.toString()) {
     // Сохраняем реферала в базе данных
-    database.ref(`referrals/${referrerId}/${chatId}`).set(true);
+    database.ref(`referrals/${chatId}`).set({
+      referrerId: referrerId
+    });
     bot.sendMessage(referrerId, `У вас новый реферал! ID: ${chatId}`);
   }
 
