@@ -176,9 +176,6 @@ bot.on('message', (msg) => {
   const menu = isAdmin ? adminMenu : mainMenu;
   
   if (isAdmin && replyToMessage) {
-    const originalMessageId = replyToMessage.message_id;
-    console.log(replyToMessage);
-
     const userId = replyToMessage.forward_from.id;
 
     // Пересылаем ответ админу пользователю
@@ -253,7 +250,13 @@ bot.on('message', (msg) => {
     };
 
     // Отправляем сообщение с реквизитами для перевода
-    bot.sendMessage(chatId, `Вы хотите пополнить баланс на ${amount}₽. Отправьте деньги на следующие реквизиты: ${paymentDetails}. После оплаты отправьте сюда чек.`, cancelMenu);
+    bot.sendMessage(chatId, `Отправьте деньги на следующие реквизиты:
+      
+      ${paymentDetails}
+
+      Сумма: ${amount}
+      
+      В ОТВЕТНОМ СООБЩЕНИИ ПРИШЛИТЕ ЧЕК ТРАНЗАКЦИИ:`, cancelMenu);
 
     awaitingDeposit[chatId] = false;  // Завершаем ожидание суммы
     awaitingReceipt[chatId] = true;  // Начинаем ожидание чека
@@ -305,8 +308,6 @@ bot.on('message', (msg) => {
       },
     });
   } else if (text === 'Реферальная система') {
-    console.log(bot)
-    console.log('username: ', bot.username);
     const referralLink = `https://t.me/SkeletonKingdomBot?start=${chatId}`;
     
     // Считаем количество рефералов
@@ -455,6 +456,8 @@ bot.on('callback_query', (query) => {
         if (snapshot.exists()) {
           const referrerId = Object.keys(snapshot.val())[0];  // Получаем ID реферера
           const bonus = depositAmount * 0.05;  // 5% бонус
+
+          console.log(bonus, 'id: ', referrerId)
 
           // Начисляем бонус рефереру
           userBalances[referrerId] = (userBalances[referrerId] || 0) + bonus;
