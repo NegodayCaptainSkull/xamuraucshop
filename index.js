@@ -9,18 +9,18 @@ const TelegramApi = require('node-telegram-bot-api');
 const admin = require('firebase-admin');
 require('firebase/database');
 const serviceAccount = require('/etc/secrets/serviceAccountKey.json');
-const token = process.env.token;
+const token = '5310139287:AAElf4Qf_XDRtxbAE9fj9wjXuHnYYN7b2uk';
 const bot = new TelegramApi(token);
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCHm-1oPvUHfGUvHCg8Y_xfjHHBFEvfNf4",
-  authDomain: "xamura-us-shop.firebaseapp.com",
+  apiKey: "AIzaSyBtHCM_DxBzOc-uAzzJbgvl9uWCbr2NlTA",
+  authDomain: "test-shop-c86c0.firebaseapp.com",
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://xamura-us-shop-default-rtdb.firebaseio.com",
-  projectId: "xamura-us-shop",
-  storageBucket: "xamura-us-shop.appspot.com",
-  messagingSenderId: "285345409811",
-  appId: "1:285345409811:web:dc6c3556e42983d96f08e6"
+  databaseURL: "https://test-shop-c86c0-default-rtdb.firebaseio.com",
+  projectId: "test-shop-c86c0",
+  storageBucket: "test-shop-c86c0.appspot.com",
+  messagingSenderId: "442194480617",
+  appId: "1:442194480617:web:498da288a16a4d6d828f78"
 };
 
 admin.initializeApp(firebaseConfig);
@@ -28,7 +28,7 @@ admin.initializeApp(firebaseConfig);
 // Получаем доступ к Realtime Database
 const database = admin.database();
 
-const URL = 'https://xamuraucshop.onrender.com';
+const URL = '';
 
 bot.setWebHook(`${URL}/bot${token}`);
 
@@ -37,7 +37,7 @@ app.post(`/bot${token}`, (req, res) => {
   res.sendStatus(200); // Отправляем успешный ответ для Telegram
 });
 
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID группы для отправки сообщений администраторам
+const ADMIN_CHAT_ID = '1151742630'; // ID группы для отправки сообщений администраторам
 
 database.ref('paymentDetails').once('value').then((snapshot) => {
   paymentDetails = snapshot.val() || "123456";
@@ -79,6 +79,7 @@ const mainMenu = {
     keyboard: [
       [{ text: 'Купить UC 💰' }],
       [{ text: 'Баланс 💳' }],
+      [{ text: 'Реферальная система' }],
     ],
     resize_keyboard: true,
     one_time_keyboard: false
@@ -90,6 +91,7 @@ const adminMenu = {
     keyboard: [
       [{ text: 'Купить UC 💰' }],
       [{ text: 'Баланс 💳' }],
+      [{ text: 'Реферальная система' }],
       [{ text: 'Редактировать товары 🛠️' }, { text: 'Редактировать реквизиты 💳' }, { text: 'Редактировать баланс 💳' }],
     ],
     resize_keyboard: true,
@@ -111,6 +113,34 @@ bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   const isAdmin = chatId.toString() === ADMIN_CHAT_ID;
   const menu = isAdmin ? adminMenu : mainMenu;
+  if (!userBalances[chatId]) {
+    userBalances[chatId] = 0; // Устанавливаем баланс, если он не был установлен
+
+    // Сохраняем нового пользователя в базе данных
+    database.ref(`userBalances/${chatId}`).set(userBalances[chatId])
+      .then(() => {
+        console.log(`New user added with ID: ${chatId}`);
+      })
+      .catch((error) => {
+        console.error(`Error adding user to database: ${error}`);
+      });
+  } // Устанавливаем баланс, если он не был установлен
+  bot.sendMessage(chatId, 'Добро пожаловать! Что вы хотите сделать?', menu);
+});
+
+bot.onText(/\/start (.+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const referrerId = match[1];  // Получаем реферальный ID
+  const isAdmin = chatId.toString() === ADMIN_CHAT_ID;
+  const menu = isAdmin ? adminMenu : mainMenu;
+
+  // Проверяем, что пользователь не является своим собственным рефералом
+  if (referrerId && referrerId !== chatId.toString()) {
+    // Сохраняем реферала в базе данных
+    database.ref(`referrals/${referrerId}/${chatId}`).set(true);
+    bot.sendMessage(referrerId, `У вас новый реферал! ID: ${chatId}`);
+  }
+
   if (!userBalances[chatId]) {
     userBalances[chatId] = 0; // Устанавливаем баланс, если он не был установлен
 
@@ -225,8 +255,6 @@ bot.on('message', (msg) => {
     // Отправляем сообщение с реквизитами для перевода
     bot.sendMessage(chatId, `Вы хотите пополнить баланс на ${amount}₽. Отправьте деньги на следующие реквизиты: ${paymentDetails}. После оплаты отправьте сюда чек.`, cancelMenu);
 
-    bot.sendMessage(ADMIN_CHAT_ID, `${userTag} (ID: ${chatId}) запросил пополнение на сумму ${amount}₽. Ожидается чек.`);
-
     awaitingDeposit[chatId] = false;  // Завершаем ожидание суммы
     awaitingReceipt[chatId] = true;  // Начинаем ожидание чека
     return;
@@ -264,8 +292,8 @@ bot.on('message', (msg) => {
     });
   } else if (text === 'Купить UC 💰') {
     const keyboard = [];
-    for (let i = 0; i < products.length; i += 3) {
-      const row = products.slice(i, i + 3).map(item => ({
+    for (let i = 0; i < products.length; i += 2) {
+      const row = products.slice(i, i + 2).map(item => ({
         text: `${item.label} UC - ${item.price}₽`,
         callback_data: `buy_${item.label}_${item.price}`,
       }));
@@ -275,6 +303,15 @@ bot.on('message', (msg) => {
       reply_markup: {
         inline_keyboard: keyboard,
       },
+    });
+  } else if (text === 'Реферальная система') {
+    const referralLink = `https://t.me/${bot.username}?start=${chatId}`;
+    
+    // Считаем количество рефералов
+    database.ref(`referrals/${chatId}`).once('value', (snapshot) => {
+      const referrals = snapshot.numChildren();
+      
+      bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Вы пригласили ${referrals} рефералов. Пригласите друзей и получайте бонусы за их покупки!`);
     });
   } else if (text === 'Редактировать товары 🛠️') {
     const chatId = msg.chat.id;
@@ -404,14 +441,31 @@ bot.on('callback_query', (query) => {
     const userInfo = pendingChecks[userId];
 
     if (userInfo) {
-      // Обновляем баланс пользователя
-      userBalances[userId] = (userBalances[userId] || 0) + userInfo.amount;
+      const depositAmount = userInfo.amount;
 
-      database.ref('userBalances').set(userBalances)
+      // Обновляем баланс пользователя
+      userBalances[userId] = (userBalances[userId] || 0) + depositAmount;
+
+      database.ref('userBalances').set(userBalances);
+
+      // Проверяем, есть ли у этого пользователя реферера
+      database.ref(`referrals/${userId}`).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+          const referrerId = Object.keys(snapshot.val())[0];  // Получаем ID реферера
+          const bonus = depositAmount * 0.05;  // 5% бонус
+
+          // Начисляем бонус рефереру
+          userBalances[referrerId] = (userBalances[referrerId] || 0) + bonus;
+          database.ref('userBalances').set(userBalances);
+
+          // Сообщаем рефереру о бонусе
+          bot.sendMessage(referrerId, `Ваш реферал пополнил баланс на ${depositAmount}₽. Вам начислено ${bonus}₽ в качестве бонуса.`);
+        }
+      });
 
       // Оповещаем администратора и пользователя
-      bot.sendMessage(ADMIN_CHAT_ID, `Пополнение на ${userInfo.amount}₽ для ${userInfo.userTag} (ID: ${userId}) подтверждено.`);
-      bot.sendMessage(userId, `Ваш баланс был пополнен на ${userInfo.amount}₽. Текущий баланс: ${userBalances[userId]}₽.`);
+      bot.sendMessage(ADMIN_CHAT_ID, `Пополнение на ${depositAmount}₽ для ${userInfo.userTag} (ID: ${userId}) подтверждено.`);
+      bot.sendMessage(userId, `Ваш баланс был пополнен на ${depositAmount}₽. Текущий баланс: ${userBalances[userId]}₽.`);
 
       // Очищаем информацию о запросе
       delete pendingChecks[userId];
