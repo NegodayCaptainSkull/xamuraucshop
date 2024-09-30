@@ -9,7 +9,7 @@ const TelegramApi = require('node-telegram-bot-api');
 const admin = require('firebase-admin');
 require('firebase/database');
 const serviceAccount = require('/etc/secrets/serviceAccountKey.json');
-const token = '5310139287:AAElf4Qf_XDRtxbAE9fj9wjXuHnYYN7b2uk';
+const token = process.env.token;
 const bot = new TelegramApi(token);
 
 const firebaseConfig = {
@@ -28,7 +28,7 @@ admin.initializeApp(firebaseConfig);
 // Получаем доступ к Realtime Database
 const database = admin.database();
 
-const URL = '';
+const URL = 'https://xamuraucshop-test.onrender.com';
 
 bot.setWebHook(`${URL}/bot${token}`);
 
@@ -37,7 +37,7 @@ app.post(`/bot${token}`, (req, res) => {
   res.sendStatus(200); // Отправляем успешный ответ для Telegram
 });
 
-const ADMIN_CHAT_ID = '1151742630'; // ID группы для отправки сообщений администраторам
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID группы для отправки сообщений администраторам
 
 database.ref('paymentDetails').once('value').then((snapshot) => {
   paymentDetails = snapshot.val() || "123456";
