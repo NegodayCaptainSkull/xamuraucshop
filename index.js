@@ -305,7 +305,9 @@ bot.on('message', (msg) => {
       },
     });
   } else if (text === 'Реферальная система') {
-    const referralLink = `https://t.me/${bot.username}?start=${chatId}`;
+    console.log(bot)
+    console.log('username: ', bot.username);
+    const referralLink = `https://t.me/SkeletonKingdomBot?start=${chatId}`;
     
     // Считаем количество рефералов
     database.ref(`referrals/${chatId}`).once('value', (snapshot) => {
