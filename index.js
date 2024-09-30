@@ -451,9 +451,12 @@ bot.on('callback_query', (query) => {
 
       database.ref('userBalances').set(userBalances);
 
+      console.log(`referrals/${userId}`);
+
       // Проверяем, есть ли у этого пользователя реферера
       database.ref(`referrals/${userId}`).once('value', (snapshot) => {
-        console.log("something" + snapshot);
+        console.log("Snapshot Key: ", snapshot.key); 
+        console.log("snapshot: " + snapshot.val());
         if (snapshot.exists()) {
           const referrerId = Object.keys(snapshot.val())[0];  // Получаем ID реферера
           const bonus = depositAmount * 0.005;  // 0.5% бонус
