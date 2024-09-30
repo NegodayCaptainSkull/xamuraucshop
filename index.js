@@ -251,12 +251,12 @@ bot.on('message', (msg) => {
 
     // Отправляем сообщение с реквизитами для перевода
     bot.sendMessage(chatId, `Отправьте деньги на следующие реквизиты:
-      
-      ${paymentDetails}
 
-      Сумма: ${amount}
-      
-      В ОТВЕТНОМ СООБЩЕНИИ ПРИШЛИТЕ ЧЕК ТРАНЗАКЦИИ:`, cancelMenu);
+${paymentDetails}
+
+Сумма: ${amount}
+
+В ОТВЕТНОМ СООБЩЕНИИ ПРИШЛИТЕ ЧЕК ТРАНЗАКЦИИ:`, cancelMenu);
 
     awaitingDeposit[chatId] = false;  // Завершаем ожидание суммы
     awaitingReceipt[chatId] = true;  // Начинаем ожидание чека
@@ -453,9 +453,10 @@ bot.on('callback_query', (query) => {
 
       // Проверяем, есть ли у этого пользователя реферера
       database.ref(`referrals/${userId}`).once('value', (snapshot) => {
+        console.log("something" + snapshot);
         if (snapshot.exists()) {
           const referrerId = Object.keys(snapshot.val())[0];  // Получаем ID реферера
-          const bonus = depositAmount * 0.05;  // 5% бонус
+          const bonus = depositAmount * 0.005;  // 0.5% бонус
 
           console.log(bonus, 'id: ', referrerId)
 
