@@ -79,7 +79,7 @@ const mainMenu = {
     keyboard: [
       [{ text: 'Купить UC 💰' }],
       [{ text: 'Баланс 💳' }],
-      [{ text: 'Реферальная система' }],
+      [{ text: 'Реферальная система 🔗' }],
     ],
     resize_keyboard: true,
     one_time_keyboard: false
@@ -91,8 +91,9 @@ const adminMenu = {
     keyboard: [
       [{ text: 'Купить UC 💰' }],
       [{ text: 'Баланс 💳' }],
-      [{ text: 'Реферальная система' }],
+      [{ text: 'Реферальная система 🔗' }],
       [{ text: 'Редактировать товары 🛠️' }, { text: 'Редактировать реквизиты 💳' }, { text: 'Редактировать баланс 💳' }],
+      [{ text: 'Сделать рассылку ✉️' }],
     ],
     resize_keyboard: true,
     one_time_keyboard: false
@@ -109,32 +110,12 @@ const cancelMenu = {
   },
 };
 
-bot.onText(/\/start/, (msg) => {
+bot.onText(/\/start(?: (.+))?/, (msg, match) => {
   const chatId = msg.chat.id;
-  const isAdmin = chatId.toString() === ADMIN_CHAT_ID;
-  const menu = isAdmin ? adminMenu : mainMenu;
-  if (!userBalances[chatId]) {
-    userBalances[chatId] = 0; // Устанавливаем баланс, если он не был установлен
-
-    // Сохраняем нового пользователя в базе данных
-    database.ref(`userBalances/${chatId}`).set(userBalances[chatId])
-      .then(() => {
-        console.log(`New user added with ID: ${chatId}`);
-      })
-      .catch((error) => {
-        console.error(`Error adding user to database: ${error}`);
-      });
-  } // Устанавливаем баланс, если он не был установлен
-  bot.sendMessage(chatId, 'Добро пожаловать! Что вы хотите сделать?', menu);
-});
-
-bot.onText(/\/start (.+)/, (msg, match) => {
-  const chatId = msg.chat.id;
-  const referrerId = match[1];  // Получаем реферальный ID
+  const referrerId = match[1];  // Получаем реферальный ID, если он есть
   const isAdmin = chatId.toString() === ADMIN_CHAT_ID;
   const menu = isAdmin ? adminMenu : mainMenu;
 
-  // Проверяем, что пользователь не является своим собственным рефералом
   if (referrerId && referrerId !== chatId.toString()) {
     // Сохраняем реферала в базе данных
     database.ref(`referrals/${chatId}`).set({
@@ -154,7 +135,9 @@ bot.onText(/\/start (.+)/, (msg, match) => {
       .catch((error) => {
         console.error(`Error adding user to database: ${error}`);
       });
-  } // Устанавливаем баланс, если он не был установлен
+  }
+
+  // Отправляем только одно приветственное сообщение
   bot.sendMessage(chatId, 'Добро пожаловать! Что вы хотите сделать?', menu);
 });
 
@@ -309,14 +292,17 @@ ${paymentDetails}
         inline_keyboard: keyboard,
       },
     });
-  } else if (text === 'Реферальная система') {
+  } else if (text === 'Реферальная система 🔗') {
     const referralLink = `https://t.me/SkeletonKingdomBot?start=${chatId}`;
     
     // Считаем количество рефералов
-    database.ref(`referrals/${chatId}`).once('value', (snapshot) => {
-      const referrals = snapshot.numChildren();
+    database.ref('referrals')
+      .orderByChild('referrerId')
+      .equalTo(chatId)
+      .once('value', (snapshot) => {
+    const referralsCount = snapshot.numChildren(); 
       
-      bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Вы пригласили ${referrals} рефералов. Пригласите друзей и получайте бонусы за их покупки!`);
+      bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Количество ваших рефералов: ${referralsCount}. Пригласите друзей и получайте бонусы за их покупки!`);
     });
   } else if (text === 'Редактировать товары 🛠️') {
     const chatId = msg.chat.id;
@@ -372,6 +358,41 @@ ${paymentDetails}
     const chatId = msg.chat.id;
     if (chatId.toString() !== ADMIN_CHAT_ID) {
       return;
+  } else if (text === 'Сделать рассылку ✉️') {
+    // Проверяем, что пользователь является администратором
+    if (chatId.toString() !== ADMIN_CHAT_ID) {
+      return;
+    }
+  
+    bot.sendMessage(chatId, 'Отправьте текст сообщения, которое хотите разослать всем пользователям:');
+    
+    // Переходим в режим ожидания текста рассылки
+    bot.once('message', (msg) => {
+      const broadcastMessage = msg.text;
+      if (!broadcastMessage) {
+        return bot.sendMessage(chatId, 'Сообщение не может быть пустым.');
+      }
+  
+      // Получаем всех пользователей из базы данных
+      database.ref('userBalances').once('value', (snapshot) => {
+        const users = snapshot.val();
+        
+        if (!users) {
+          return bot.sendMessage(chatId, 'Нет пользователей для рассылки.');
+        }
+  
+        // Разослать сообщение каждому пользователю
+        const userIds = Object.keys(users);
+        userIds.forEach((userId) => {
+          bot.sendMessage(userId, broadcastMessage)
+            .catch((error) => {
+              console.error(`Ошибка при отправке сообщения пользователю ${userId}:`, error);
+            });
+        });
+  
+        bot.sendMessage(chatId, `Сообщение успешно отправлено ${userIds.length} пользователям.`);
+      });
+    });
     }
   
     bot.sendMessage(chatId, 'Введите новые реквизиты для пополнения:', cancelMenu);
