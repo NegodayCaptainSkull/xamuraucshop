@@ -73,6 +73,8 @@ let awaitingReceipt = {};  // Ожидание чека
 let awaitingPubgId = {};   // Ожидание ввода PUBG ID от пользователя
 let pendingChecks = {};    // Храним информацию о пользователях, чьи чеки ожидают подтверждения
 
+bot.setMyCommands();
+
 // Главное меню с кнопками
 const mainMenu = {
   reply_markup: {
@@ -294,16 +296,9 @@ ${paymentDetails}
     });
   } else if (text === 'Реферальная система 🔗') {
     const referralLink = `https://t.me/SkeletonKingdomBot?start=${chatId}`;
-    
-    // Считаем количество рефералов
-    database.ref('referrals')
-      .orderByChild('referrerId')
-      .equalTo(chatId)
-      .once('value', (snapshot) => {
-    const referralsCount = snapshot.numChildren(); 
+
       
-      bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Количество ваших рефералов: ${referralsCount}. Пригласите друзей и получайте бонусы за их покупки!`);
-    });
+      bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Пригласите друзей и получайте бонусы за их покупки!`);
   } else if (text === 'Редактировать товары 🛠️') {
     const chatId = msg.chat.id;
     if (chatId.toString() !== ADMIN_CHAT_ID) {
