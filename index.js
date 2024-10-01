@@ -353,41 +353,6 @@ ${paymentDetails}
     const chatId = msg.chat.id;
     if (chatId.toString() !== ADMIN_CHAT_ID) {
       return;
-  } else if (text === 'Сделать рассылку ✉️') {
-    // Проверяем, что пользователь является администратором
-    if (chatId.toString() !== ADMIN_CHAT_ID) {
-      return;
-    }
-  
-    bot.sendMessage(chatId, 'Отправьте текст сообщения, которое хотите разослать всем пользователям:');
-    
-    // Переходим в режим ожидания текста рассылки
-    bot.once('message', (msg) => {
-      const broadcastMessage = msg.text;
-      if (!broadcastMessage) {
-        return bot.sendMessage(chatId, 'Сообщение не может быть пустым.');
-      }
-  
-      // Получаем всех пользователей из базы данных
-      database.ref('userBalances').once('value', (snapshot) => {
-        const users = snapshot.val();
-        
-        if (!users) {
-          return bot.sendMessage(chatId, 'Нет пользователей для рассылки.');
-        }
-  
-        // Разослать сообщение каждому пользователю
-        const userIds = Object.keys(users);
-        userIds.forEach((userId) => {
-          bot.sendMessage(userId, broadcastMessage)
-            .catch((error) => {
-              console.error(`Ошибка при отправке сообщения пользователю ${userId}:`, error);
-            });
-        });
-  
-        bot.sendMessage(chatId, `Сообщение успешно отправлено ${userIds.length} пользователям.`);
-      });
-    });
     }
   
     bot.sendMessage(chatId, 'Введите новые реквизиты для пополнения:', cancelMenu);
@@ -444,7 +409,42 @@ ${paymentDetails}
           });
       });
     });
-  }
+  }  else if (text === 'Сделать рассылку ✉️') {
+    // Проверяем, что пользователь является администратором
+    if (chatId.toString() !== ADMIN_CHAT_ID) {
+      return;
+    }
+  
+    bot.sendMessage(chatId, 'Отправьте текст сообщения, которое хотите разослать всем пользователям:');
+    
+    // Переходим в режим ожидания текста рассылки
+    bot.once('message', (msg) => {
+      const broadcastMessage = msg.text;
+      if (!broadcastMessage) {
+        return bot.sendMessage(chatId, 'Сообщение не может быть пустым.');
+      }
+  
+      // Получаем всех пользователей из базы данных
+      database.ref('userBalances').once('value', (snapshot) => {
+        const users = snapshot.val();
+        
+        if (!users) {
+          return bot.sendMessage(chatId, 'Нет пользователей для рассылки.');
+        }
+  
+        // Разослать сообщение каждому пользователю
+        const userIds = Object.keys(users);
+        userIds.forEach((userId) => {
+          bot.sendMessage(userId, broadcastMessage)
+            .catch((error) => {
+              console.error(`Ошибка при отправке сообщения пользователю ${userId}:`, error);
+            });
+        });
+  
+        bot.sendMessage(chatId, `Сообщение успешно отправлено ${userIds.length} пользователям.`);
+      });
+    });
+    }
 });
 
 // Обработка нажатий на inline-кнопки
