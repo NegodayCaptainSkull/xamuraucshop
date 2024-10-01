@@ -131,9 +131,6 @@ bot.onText(/\/start(?: (.+))?/, (msg, match) => {
 
     // Сохраняем нового пользователя в базе данных
     database.ref(`userBalances/${chatId}`).set(userBalances[chatId])
-      .then(() => {
-        console.log(`New user added with ID: ${chatId}`);
-      })
       .catch((error) => {
         console.error(`Error adding user to database: ${error}`);
       });
@@ -308,8 +305,6 @@ ${paymentDetails}
     bot.sendMessage(chatId, 'Введите номер товара для изменения (например, 60):', cancelMenu);
     bot.once('message', (msg) => {
       if (msg.text === 'Отмена') {
-        // Сброс ожидания и вывод сообщения об отмене
-        bot.sendMessage(chatId, 'Изменение цены отменено.', menu);
         return;
       }
 
@@ -326,8 +321,6 @@ ${paymentDetails}
       bot.sendMessage(chatId, 'Введите новую цену:');
       bot.once('message', (msg) => {
         if (msg.text === 'Отмена') {
-          // Сброс ожидания и вывод сообщения об отмене
-          bot.sendMessage(chatId, 'Изменение цены отменено.', menu);
           return;
         }
 
@@ -358,8 +351,6 @@ ${paymentDetails}
     bot.sendMessage(chatId, 'Введите новые реквизиты для пополнения:', cancelMenu);
     bot.once('message', (msg) => {
       if (msg.text === 'Отмена') {
-        // Сброс ожидания и вывод сообщения об отмене
-        bot.sendMessage(chatId, 'Изменение реквизитов отменено.', menu);
         return;
       }
 
@@ -382,8 +373,6 @@ ${paymentDetails}
     bot.sendMessage(chatId, 'Введите ID пользователя, чей баланс вы хотите изменить:', cancelMenu);
     bot.once('message', (msg) => {
       if (msg.text === 'Отмена') {
-        // Сброс ожидания и вывод сообщения об отмене
-        bot.sendMessage(chatId, 'Изменение баланса отменено.', menu);
         return;
       }
 
@@ -415,11 +404,14 @@ ${paymentDetails}
       return;
     }
   
-    bot.sendMessage(chatId, 'Отправьте текст сообщения, которое хотите разослать всем пользователям:');
+    bot.sendMessage(chatId, 'Отправьте текст сообщения, которое хотите разослать всем пользователям:', cancelMenu);
     
     // Переходим в режим ожидания текста рассылки
     bot.once('message', (msg) => {
       const broadcastMessage = msg.text;
+      if (msg.text === 'Отмена') {
+        return;
+      }
       if (!broadcastMessage) {
         return bot.sendMessage(chatId, 'Сообщение не может быть пустым.');
       }
@@ -469,19 +461,12 @@ bot.on('callback_query', (query) => {
 
       database.ref('userBalances').set(userBalances);
 
-      console.log(`referrals/${userId}`);
-
       // Проверяем, есть ли у этого пользователя реферера
       database.ref(`referrals/${userId}`).once('value', (snapshot) => {
-        console.log("Snapshot Key: ", snapshot.key); 
-        console.log("snapshot: " + snapshot.val());
-        console.log("shapshot keys: " + Object.keys(snapshot.val()))
         if (snapshot.exists()) {
           const referralData = snapshot.val();
           const referrerId = referralData[Object.keys(referralData)[0]];  // Получаем ID реферера
           const bonus = depositAmount * 0.005;  // 0.5% бонус
-
-          console.log(bonus, 'id: ', referrerId)
 
           // Начисляем бонус рефереру
           userBalances[referrerId] = (userBalances[referrerId] || 0) + bonus;
