@@ -13,14 +13,14 @@ const token = process.env.token;
 const bot = new TelegramApi(token);
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBtHCM_DxBzOc-uAzzJbgvl9uWCbr2NlTA",
-  authDomain: "test-shop-c86c0.firebaseapp.com",
+  apiKey: "AIzaSyCHm-1oPvUHfGUvHCg8Y_xfjHHBFEvfNf4",
+  authDomain: "xamura-us-shop.firebaseapp.com",
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://test-shop-c86c0-default-rtdb.firebaseio.com",
-  projectId: "test-shop-c86c0",
-  storageBucket: "test-shop-c86c0.appspot.com",
-  messagingSenderId: "442194480617",
-  appId: "1:442194480617:web:498da288a16a4d6d828f78"
+  databaseURL: "https://xamura-us-shop-default-rtdb.firebaseio.com",
+  projectId: "xamura-us-shop",
+  storageBucket: "xamura-us-shop.appspot.com",
+  messagingSenderId: "285345409811",
+  appId: "1:285345409811:web:dc6c3556e42983d96f08e6"
 };
 
 admin.initializeApp(firebaseConfig);
@@ -28,7 +28,7 @@ admin.initializeApp(firebaseConfig);
 // Получаем доступ к Realtime Database
 const database = admin.database();
 
-const URL = 'https://xamuraucshop-test.onrender.com';
+const URL = 'https://xamuraucshop.onrender.com';
 
 bot.setWebHook(`${URL}/bot${token}`);
 
@@ -292,7 +292,7 @@ ${paymentDetails}
       },
     });
   } else if (text === 'Реферальная система 🔗') {
-    const referralLink = `https://t.me/SkeletonKingdomBot?start=${chatId}`;
+    const referralLink = `https://t.me/XaMuRaSHOP_bot?start=${chatId}`;
 
       
       bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Пригласите друзей и получайте бонусы за их покупки!`);
