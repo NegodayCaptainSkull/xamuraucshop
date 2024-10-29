@@ -561,8 +561,7 @@ ${paymentDetails}
 
     bot.sendMessage(chatId, 'Выберите товар, который хотите изменить:', {
       reply_markup: {
-        inline_keyboard: inlineKeyboard,
-        keyboard: cancelMenu.reply_markup.keyboard
+        inline_keyboard: inlineKeyboard
       }
     });
 
@@ -592,8 +591,7 @@ ${paymentDetails}
 
     bot.sendMessage(chatId, 'Выберите товар, который хотите удалить:', {
       reply_markup: {
-        inline_keyboard: inlineKeyboard,
-        keyboard: cancelMenu.reply_markup.keyboard
+        inline_keyboard: inlineKeyboard
       }
     });
 
