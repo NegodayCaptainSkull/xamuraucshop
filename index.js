@@ -237,7 +237,17 @@ bot.on('message', (msg) => {
     awaitingPubgId[chatId] = false;
     awaitingDeposit[chatId] = false;
     awaitingReceipt[chatId] = false;
-
+    awaitingDeposit[chatId] = false;
+    awaitingReceipt[chatId] = false;
+    awaitingPubgId[chatId] = false;
+    pendingChecks[chatId] = false;
+    awaitingToChangeProduct[chatId] = false;
+    awaitingToChangeCredentials[chatId] = false;
+    awaitingUserToChangeBalance[chatId] = false;
+    awaitingToChangeBalance[chatId] = false;
+    awaitingToCreateMailing[chatId] = false;
+    awaitingToAddAdmin[chatId] = false;
+    awaitingToRemoveAdmin[chatId] = false;
     // Возвращаем главное меню
     bot.sendMessage(chatId, 'Действие отменено. Вы вернулись в главное меню.', menu);
     return;
