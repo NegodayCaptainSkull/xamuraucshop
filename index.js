@@ -749,9 +749,9 @@ bot.on('callback_query', (query) => {
     const labelToDelete = data.replace('delete_product_', '');
 
     // Проверка наличия товара
-    const product = products.find(p => p.label === label);
+    const product = products.find(p => p.label === labelToDelete);
     if (!product) {
-        bot.sendMessage(chatId, `Товар с меткой ${label} не найден.`);
+        bot.sendMessage(chatId, `Товар с меткой ${labelToDelete} не найден.`);
         return;
     }
 
