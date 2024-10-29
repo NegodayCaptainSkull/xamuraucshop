@@ -281,6 +281,7 @@ bot.on('message', (msg) => {
           inline_keyboard: [
             [{ text: 'Пополнить баланс', callback_data: 'deposit' }],
           ],
+          keyboard: menu.reply_markup.keyboard,
         },
       });
     }
@@ -347,7 +348,7 @@ ${paymentDetails}
     product.price = newPrice;
     database.ref('products').set(products)
     .then(() => {
-        bot.sendMessage(chatId, `Цена товара ${product.name} (метка ${label}) была изменена на ${newPrice}₽.`);
+        bot.sendMessage(chatId, `Цена товара ${product.name}) была изменена на ${newPrice}₽.`);
     })
     .catch((error) => {
         bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.');
