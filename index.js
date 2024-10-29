@@ -759,9 +759,9 @@ bot.on('callback_query', (query) => {
   if (index !== -1) {
     // Удаляем товар из массива
     products.splice(index, 1);
-    console.log(`Товар с label ${labelToDelete} был удален.`);
+    bot.sendMessage(chatId, `Товар с label ${labelToDelete} был удален.`);
   } else {
-    console.log(`Товар с label ${labelToDelete} не найден.`);
+    bot.sendMessage(chatId, `Товар с label ${labelToDelete} не найден.`);
   }
 
   } else if (data === 'deposit') {
