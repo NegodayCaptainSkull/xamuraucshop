@@ -12,15 +12,23 @@ const serviceAccount = require('/etc/secrets/serviceAccountKey.json');
 const token = process.env.token;
 const bot = new TelegramApi(token);
 
-admin.initializeApp({
+const firebaseConfig = {
+  apiKey: "AIzaSyBtHCM_DxBzOc-uAzzJbgvl9uWCbr2NlTA",
+  authDomain: "test-shop-c86c0.firebaseapp.com",
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://test-shop-c86c0-default-rtdb.firebaseio.com",
-});
+  projectId: "test-shop-c86c0",
+  storageBucket: "test-shop-c86c0.appspot.com",
+  messagingSenderId: "442194480617",
+  appId: "1:442194480617:web:498da288a16a4d6d828f78"
+};
+
+admin.initializeApp(firebaseConfig);
 
 // Получаем доступ к Realtime Database
 const database = admin.database();
 
-const URL = 'https://xamuraucshop-test.onrender.com';
+const URL = 'https://xamura-shop.onrender.com';
 
 bot.setWebHook(`${URL}/bot${token}`);
 
@@ -103,14 +111,6 @@ let awaitingDeposit = {};  // Ожидание суммы для пополне�
 let awaitingReceipt = {};  // Ожидание чека
 let awaitingPubgId = {};   // Ожидание ввода PUBG ID от пользователя
 let pendingChecks = {};    // Храним информацию о пользователях, чьи чеки ожидают подтверждения
-let awaitingToChangeProduct = {};
-let awaitingToChangeCredentials = {};
-let awaitingUserToChangeBalance = {};
-let awaitingToChangeBalance = {};
-let awaitingToCreateMailing = {};
-let awaitingToAddAdmin = {};
-let awaitingToRemoveAdmin = {};
-
 
 bot.setMyCommands();
 
@@ -133,26 +133,13 @@ const adminMenu = {
       [{ text: 'Купить UC 💰' }],
       [{ text: 'Баланс 💳' }],
       [{ text: 'Реферальная система 🔗' }],
-      [{ text: 'Меню администратора ⚙️' }],
+      [{ text: 'Редактировать товары 🛠️' }, { text: 'Редактировать реквизиты 💳' }, { text: 'Редактировать баланс 💳' }],
+      [{ text: 'Сделать рассылку ✉️' }],
+      [{ text: 'Добавить администратора 👤' }, { text: 'Удалить администратора 🗑️' }]
     ],
     resize_keyboard: true,
     one_time_keyboard: false
   },
-};
-
-const adminActionsMenu = {
-  reply_markup: {
-    keyboard: [
-      [{ text: 'Редактировать товары 🛠️' }, { text: 'Добавить товар ➕' }, { text: 'Удалить товар ➖' }],
-      [{ text: 'Редактировать реквизиты 💳' }],
-      [{ text: 'Редактировать баланс 💳' }],
-      [{ text: 'Сделать рассылку ✉️' }],
-      [{ text: 'Добавить администратора 👤' }, { text: 'Удалить администратора 🗑️' }]
-      [{ text: 'Назад ↩️' }]  // Кнопка для возврата в основное меню
-    ],
-    resize_keyboard: true,
-    one_time_keyboard: false
-  }
 };
 
 const cancelMenu = {
@@ -317,161 +304,6 @@ ${paymentDetails}
     return;
   }
 
-  if (awaitingToChangeProduct[chatId]) {
-    const product = awaitingToChangeProduct.product;
-    const newPrice = parseFloat(msg.text);
-          if (isNaN(newPrice)) {
-              bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.');
-              return;
-          }
-
-          // Обновляем цену товара
-          product.price = newPrice;
-          database.ref('products').set(products)
-          .then(() => {
-              bot.sendMessage(chatId, `Цена товара ${product.name} (метка ${label}) была изменена на ${newPrice}₽.`);
-          })
-          .catch((error) => {
-              bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.');
-              console.error(error);
-          });
-      awaitingToChangeProduct[chatId] = false
-  }
-
-  if (awaitingToChangeCredentials[chatId]) {
-    paymentDetails = msg.text;
-      database.ref('paymentDetails').set(paymentDetails)
-        .then(() => {
-          bot.sendMessage(chatId, `Реквизиты были успешно изменены на: ${paymentDetails}`, menu);
-        })
-        .catch((error) => {
-          bot.sendMessage(chatId, 'Ошибка сохранения реквизитов в Firebase.', menu);
-          console.error(error);
-    });
-  }
-
-  if (awaitingUserToChangeBalance[chatId]) {
-    const userId = msg.text; // Получаем ID пользователя
-    
-    bot.sendMessage(chatId, `Баланс пользователя ${userBalances[userId]}. Введите новую сумму для баланса:`);
-
-    awaitingToChangeBalance[chatId] = {userId}
-    awaitingUserToChangeBalance[chatId] = false
-  }
-
-  if (awaitingToChangeBalance[chatId]) {
-    const newBalance = parseFloat(msg.text); // Получаем новую сумму
-    const userId = awaitingToChangeBalance[chatId].userId
-
-    if (isNaN(newBalance)) {
-      bot.sendMessage(chatId, 'Пожалуйста, введите корректную сумму.', menu);
-      return;
-    }
-
-    if (userBalances[userId] || userBalances[userId] === 0) {
-      userBalances[userId] = newBalance; // Обновляем баланс пользователя
-      database.ref('userBalances').set(userBalances)
-        .then(() => {
-          bot.sendMessage(chatId, `Баланс пользователя с ID ${userId} был изменен на ${newBalance}₽.`, menu);
-        })
-        .catch((error) => {
-          bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
-          console.error(error);
-        });
-    } else {
-      bot.sendMessage(chatId, 'Пользователя с таким id нет.', menu)
-    }
-
-    awaitingToChangeBalance[chatId] = false
-  } 
-
-  if (awaitingToCreateMailing[chatId]) {
-    const broadcastMessage = msg.text;
-    if (msg.text === 'Отмена') {
-      return;
-    }
-    if (!broadcastMessage) {
-      return bot.sendMessage(chatId, 'Сообщение не может быть пустым.');
-    }
-
-    // Получаем всех пользователей из базы данных
-    database.ref('userBalances').once('value', async (snapshot) => {
-      const users = snapshot.val();
-      
-      if (!users) {
-        return bot.sendMessage(chatId, 'Нет пользователей для рассылки.');
-      }
-
-      // Разослать сообщение каждому пользователю
-      const userIds = Object.keys(users);
-      for (const userId of userIds) {
-        try {
-          await bot.sendMessage(userId, broadcastMessage);
-        } catch (error) {
-          // Если ошибка связана с превышением лимита запросов, обрабатываем её
-          if (error.response && error.response.statusCode === 429) {
-            const retryAfter = error.response.body.parameters.retry_after || 1;
-            console.log(`Превышен лимит запросов, повтор через ${retryAfter} секунд...`);
-            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-          }
-        }
-    
-        // Добавляем задержку между сообщениями, чтобы не превысить лимит Telegram
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Задержка 1 секунда
-      }
-
-      bot.sendMessage(chatId, `Сообщение успешно отправлено ${userIds.length} пользователям.`, menu);
-    });
-
-    awaitingToCreateMailing[chatId] = false;
-  }
-
-  if (awaitingToAddAdmin[chatId]) {
-    const newAdminId = msg.text;
-    if (!admins[newAdminId]) {
-      // Добавляем нового администратора в список
-      admins[newAdminId] = true;
-      database.ref('admins').set(admins)
-        .then(() => {
-          bot.sendMessage(chatId, `Пользователь с ID ${newAdminId} добавлен как администратор.`, menu);
-          bot.sendMessage(newAdminId, 'Вы были добавлены в качестве администратора.');
-        })
-        .catch((error) => {
-          bot.sendMessage(chatId, `Произошла ошибка: ${error.message}`);
-        });
-    } else {
-      bot.sendMessage(chatId, `Пользователь с ID ${newAdminId} уже является администратором.`, menu);
-    }
-
-    awaitingToAddAdmin[chatId] = false;
-  }
-
-  if (awaitingToRemoveAdmin[chatId]) {
-    const adminIdToRemove = msg.text;
-          
-    // Проверяем, что этот пользователь действительно является администратором
-    if (admins[adminIdToRemove]) {
-      if (adminIdToRemove === ADMIN_CHAT_ID) {
-        bot.sendMessage(chatId, 'Нельзя удалить главного администратора', menu);
-      } else {
-        // Удаляем администратора из списка
-        delete admins[adminIdToRemove];
-        database.ref('admins').set(admins)
-            .then(() => {
-                bot.sendMessage(chatId, `Пользователь с ID ${adminIdToRemove} был удален из списка администраторов.`, menu);
-                bot.sendMessage(adminIdToRemove, 'Вы были удалены из списка администраторов.');
-            })
-            .catch((error) => {
-                bot.sendMessage(chatId, `Произошла ошибка: ${error.message}`);
-            });
-      }
-    } else {
-        bot.sendMessage(chatId, `Пользователь с ID ${adminIdToRemove} не является администратором.`, menu);
-    }
-
-    awaitingToRemoveAdmin[chatId] = false;
-  }
-
   // Обычные команды
   if (text === 'Баланс 💳') {
     const balance = userBalances[chatId];
@@ -499,41 +331,54 @@ ${paymentDetails}
   } else if (text === 'Реферальная система 🔗') {
     const referralLink = `https://t.me/XaMuRaSHOP_bot?start=${chatId}`;
 
-    bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Пригласите друзей и получайте бонусы за их покупки!`);
-  } else if (text === 'Меню администратора ⚙️') {
-    if (!isAdmin(chatId)) {
-      return; 
-    }
-    bot.sendMessage(chatId, 'Выберите действие:', adminActionsMenu);
-  } else if (text === 'Назад ↩️') {
-    if (!isAdmin(chatId)) {
-      return; 
-    }
-    bot.sendMessage(chatId, 'Вы вернулись в главное меню:', adminMenu);
+      
+      bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Пригласите друзей и получайте бонусы за их покупки!`);
   } else if (text === 'Редактировать товары 🛠️') {
     const chatId = msg.chat.id;
     if (!isAdmin(chatId)) {
       return; 
     }
-
-    // Создаем инлайн-клавиатуру с кнопками для каждого товара
-    const productButtons = products.map(product => ({
-      text: `${product.label} - ${product.name}`,  // Отображаем метку и имя товара
-      callback_data: `edit_product_${product.label}`  // Уникальный callback_data для каждого товара
-    }));
-
-    // Разбиваем кнопки на строки по 2 кнопки в каждой строке
-    const keyboard = [];
-    for (let i = 0; i < productButtons.length; i += 2) {
-      keyboard.push(productButtons.slice(i, i + 2));
-    }
-
-    bot.sendMessage(chatId, 'Выберите товар, который хотите изменить:', {
-      reply_markup: {
-        inline_keyboard: keyboard
+  
+    bot.sendMessage(chatId, 'Введите номер товара для изменения (например, 60):', cancelMenu);
+    bot.once('message', (msg) => {
+      if (msg.text === 'Отмена') {
+        return;
       }
-    });
 
+      const label = msg.text;
+  
+      // Проверка наличия товара
+      const product = products.find(p => p.label === label);
+      if (!product) {
+        bot.sendMessage(chatId, `Товар с меткой ${label} не найден.`, menu);
+        return;
+      }
+  
+      // Запрашиваем новую цену
+      bot.sendMessage(chatId, 'Введите новую цену:');
+      bot.once('message', (msg) => {
+        if (msg.text === 'Отмена') {
+          return;
+        }
+
+        const newPrice = parseFloat(msg.text);
+        if (isNaN(newPrice)) {
+          bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.', menu);
+          return;
+        }
+  
+        // Обновляем цену товара
+        product.price = newPrice;
+        database.ref('products').set(products)
+        .then(() => {
+          bot.sendMessage(chatId, `Цена товара ${label} UC была изменена на ${newPrice}₽.`, menu);
+        })
+        .catch((error) => {
+          bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
+          console.error(error);
+        });
+      });
+    });
   } else if (text === 'Редактировать реквизиты 💳') {
     const chatId = msg.chat.id;
     if (!isAdmin(chatId)) {
@@ -541,8 +386,21 @@ ${paymentDetails}
     }
   
     bot.sendMessage(chatId, 'Введите новые реквизиты для пополнения:', cancelMenu);
+    bot.once('message', (msg) => {
+      if (msg.text === 'Отмена') {
+        return;
+      }
 
-    awaitingToChangeCredentials[chatId] = true;
+      paymentDetails = msg.text;
+      database.ref('paymentDetails').set(paymentDetails)
+        .then(() => {
+          bot.sendMessage(chatId, `Реквизиты были успешно изменены на: ${paymentDetails}`, menu);
+        })
+        .catch((error) => {
+          bot.sendMessage(chatId, 'Ошибка сохранения реквизитов в Firebase.', menu);
+          console.error(error);
+        });
+    });
   } else if (text === 'Редактировать баланс 💳') {
     const chatId = msg.chat.id;
     if (!isAdmin(chatId)) {
@@ -550,8 +408,37 @@ ${paymentDetails}
     }
   
     bot.sendMessage(chatId, 'Введите ID пользователя, чей баланс вы хотите изменить:', cancelMenu);
+    bot.once('message', (msg) => {
+      if (msg.text === 'Отмена') {
+        return;
+      }
 
-    awaitingUserToChangeBalance[chatId] = true;
+      const userId = msg.text; // Получаем ID пользователя
+  
+      bot.sendMessage(chatId, 'Введите новую сумму для баланса:');
+      bot.once('message', (msg) => {
+        const newBalance = parseFloat(msg.text); // Получаем новую сумму
+  
+        if (isNaN(newBalance)) {
+          bot.sendMessage(chatId, 'Пожалуйста, введите корректную сумму.', menu);
+          return;
+        }
+  
+        if (userBalances[userId] || userBalances[userId] === 0) {
+          userBalances[userId] = newBalance; // Обновляем баланс пользователя
+          database.ref('userBalances').set(userBalances)
+            .then(() => {
+              bot.sendMessage(chatId, `Баланс пользователя с ID ${userId} был изменен на ${newBalance}₽.`, menu);
+            })
+            .catch((error) => {
+              bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
+              console.error(error);
+            });
+        } else {
+          bot.sendMessage(chatId, 'Пользователя с таким id нет.', menu)
+        }
+      });
+    });
   }  else if (text === 'Сделать рассылку ✉️') {
     // Проверяем, что пользователь является администратором
     if (!isAdmin(chatId)) {
@@ -560,19 +447,94 @@ ${paymentDetails}
   
     bot.sendMessage(chatId, 'Отправьте текст сообщения, которое хотите разослать всем пользователям:', cancelMenu);
     
-    awaitingToCreateMailing[chatId] = true;
-  } else if (text === 'Добавить администратора 👤') {
-    if (isAdmin(chatId)) {
-      bot.sendMessage(chatId, 'Введить Id пользователя, которого хотите сделать администратором: ', cancelMenu)
+    // Переходим в режим ожидания текста рассылки
+    bot.once('message', (msg) => {
+      const broadcastMessage = msg.text;
+      if (msg.text === 'Отмена') {
+        return;
+      }
+      if (!broadcastMessage) {
+        return bot.sendMessage(chatId, 'Сообщение не может быть пустым.');
+      }
+  
+      // Получаем всех пользователей из базы данных
+      database.ref('userBalances').once('value', async (snapshot) => {
+        const users = snapshot.val();
+        
+        if (!users) {
+          return bot.sendMessage(chatId, 'Нет пользователей для рассылки.');
+        }
+  
+        // Разослать сообщение каждому пользователю
+        const userIds = Object.keys(users);
+        for (const userId of userIds) {
+          try {
+            await bot.sendMessage(userId, messageText);
+          } catch (error) {
+            // Если ошибка связана с превышением лимита запросов, обрабатываем её
+            if (error.response && error.response.statusCode === 429) {
+              const retryAfter = error.response.body.parameters.retry_after || 1;
+              console.log(`Превышен лимит запросов, повтор через ${retryAfter} секунд...`);
+              await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            }
+          }
       
-      awaitingToAddAdmin[chatId] = true;
-    }
-  } else if (text === 'Удалить администратора 🗑️') {
-    if (isAdmin(chatId)) {
-      bot.sendMessage(chatId, 'Введите ID администратора, которого хотите удалить: ', cancelMenu);
-      
-      awaitingToRemoveAdmin[chatId] = true;
-    }
+          // Добавляем задержку между сообщениями, чтобы не превысить лимит Telegram
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Задержка 1 секунда
+        }
+  
+        bot.sendMessage(chatId, `Сообщение успешно отправлено ${userIds.length} пользователям.`, menu);
+      });
+    });
+    } else if (text === 'Добавить администратора 👤') {
+      if (isAdmin(chatId)) {
+        bot.sendMessage(chatId, 'Введить Id пользователя, которого хотите сделать администратором: ', cancelMenu)
+        bot.once('message', (msg) => {
+          const newAdminId = msg.text;
+          if (!admins[newAdminId]) {
+            // Добавляем нового администратора в список
+            admins[newAdminId] = true;
+            database.ref('admins').set(admins)
+              .then(() => {
+                bot.sendMessage(chatId, `Пользователь с ID ${newAdminId} добавлен как администратор.`, menu);
+                bot.sendMessage(newAdminId, 'Вы были добавлены в качестве администратора.');
+              })
+              .catch((error) => {
+                bot.sendMessage(chatId, `Произошла ошибка: ${error.message}`);
+              });
+          } else {
+            bot.sendMessage(chatId, `Пользователь с ID ${newAdminId} уже является администратором.`, menu);
+          }
+        })
+      }
+    } else if (text === 'Удалить администратора 🗑️') {
+        if (isAdmin(chatId)) {
+          bot.sendMessage(chatId, 'Введите ID администратора, которого хотите удалить: ', cancelMenu);
+          
+          bot.once('message', (msg) => {
+              const adminIdToRemove = msg.text;
+              
+              // Проверяем, что этот пользователь действительно является администратором
+              if (admins[adminIdToRemove]) {
+                if (adminIdToRemove === ADMIN_CHAT_ID) {
+                  bot.sendMessage(chatId, 'Нельзя удалить главного администратора', menu);
+                } else {
+                  // Удаляем администратора из списка
+                  delete admins[adminIdToRemove];
+                  database.ref('admins').set(admins)
+                      .then(() => {
+                          bot.sendMessage(chatId, `Пользователь с ID ${adminIdToRemove} был удален из списка администраторов.`, menu);
+                          bot.sendMessage(adminIdToRemove, 'Вы были удалены из списка администраторов.');
+                      })
+                      .catch((error) => {
+                          bot.sendMessage(chatId, `Произошла ошибка: ${error.message}`);
+                      });
+                }
+              } else {
+                  bot.sendMessage(chatId, `Пользователь с ID ${adminIdToRemove} не является администратором.`, menu);
+              }
+          });
+        }
   }
 });
 
@@ -671,20 +633,7 @@ bot.on('callback_query', (query) => {
     });
 
     return;
-  } else if (data.startsWith('edit_product_')) {
-      const label = data.replace('edit_product_', '');
-
-      // Проверка наличия товара
-      const product = products.find(p => p.label === label);
-      if (!product) {
-          bot.sendMessage(chatId, `Товар с меткой ${label} не найден.`);
-          return;
-      }
-
-      bot.sendMessage(chatId, `Введите новую цену для товара ${product.name}:`);
-
-      awaitingToChangeProduct[chatId] = {product}
-  } else if (data === 'deposit') {
+  }else if (data === 'deposit') {
     // Бот запрашивает сумму для пополнения
     bot.sendMessage(chatId, 'Введите сумму, на которую вы хотите пополнить баланс:', cancelMenu);
     awaitingDeposit[chatId] = true;  // Ожидание суммы для пополнения
