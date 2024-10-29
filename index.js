@@ -288,10 +288,7 @@ bot.on('message', (msg) => {
 
     awaitingPubgId[chatId] = false; // Завершаем ожидание ID в PUBG
     return;
-  }
-
-  // Если бот ждет сумму для пополнения
-  if (awaitingDeposit[chatId]) {
+  } else if (awaitingDeposit[chatId]) {
     const amount = parseFloat(text); // Преобразуем введенное значение в число
 
     if (isNaN(amount) || amount <= 0) {
@@ -318,9 +315,7 @@ ${paymentDetails}
     awaitingDeposit[chatId] = false;  // Завершаем ожидание суммы
     awaitingReceipt[chatId] = true;  // Начинаем ожидание чека
     return;
-  }
-
-  if (awaitingReceipt[chatId]) {
+  } else if (awaitingReceipt[chatId]) {
     // Пересылаем чек администратору
     forwardMessageToAllAdmins(chatId, msg.message_id)
     bot.sendMessage(chatId, 'Чек получен и отправлен администратору на проверку. Ожидайте подтверждения.', menu);
@@ -334,13 +329,11 @@ ${paymentDetails}
 
     awaitingReceipt[chatId] = false;  // Завершаем ожидание чека
     return;
-  }
-
-  if (awaitingToChangeProduct[chatId]) {
+  } else if (awaitingToChangeProduct[chatId]) {
     const product = awaitingToChangeProduct[chatId].product;
     const newPrice = parseFloat(msg.text);
     if (isNaN(newPrice)) {
-        bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.');
+        bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.', menu);
         return;
     }
 
@@ -348,16 +341,14 @@ ${paymentDetails}
     product.price = newPrice;
     database.ref('products').set(products)
     .then(() => {
-        bot.sendMessage(chatId, `Цена товара ${product.name}) была изменена на ${newPrice}₽.`);
+        bot.sendMessage(chatId, `Цена товара ${product.label} была изменена на ${newPrice}₽.`, menu);
     })
     .catch((error) => {
-        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.');
+        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
         console.error(error);
     });
       awaitingToChangeProduct[chatId] = false
-  }
-
-  if (awaitingToChangeCredentials[chatId]) {
+  } else if (awaitingToChangeCredentials[chatId]) {
     paymentDetails = msg.text;
       database.ref('paymentDetails').set(paymentDetails)
         .then(() => {
@@ -369,18 +360,14 @@ ${paymentDetails}
     });
 
     awaitingToChangeCredentials[chatId] = false;
-  }
-
-  if (awaitingUserToChangeBalance[chatId]) {
+  } else if (awaitingUserToChangeBalance[chatId]) {
     const userId = msg.text; // Получаем ID пользователя
     
     bot.sendMessage(chatId, `Баланс пользователя ${userBalances[userId]}. Введите новую сумму для баланса:`);
 
     awaitingToChangeBalance[chatId] = {userId}
     awaitingUserToChangeBalance[chatId] = false
-  }
-
-  if (awaitingToChangeBalance[chatId]) {
+  } else if (awaitingToChangeBalance[chatId]) {
     const newBalance = parseFloat(msg.text); // Получаем новую сумму
     const userId = awaitingToChangeBalance[chatId].userId
 
@@ -404,9 +391,7 @@ ${paymentDetails}
     }
 
     awaitingToChangeBalance[chatId] = false
-  } 
-
-  if (awaitingToCreateMailing[chatId]) {
+  }  else if (awaitingToCreateMailing[chatId]) {
     const broadcastMessage = msg.text;
     if (msg.text === 'Отмена') {
       return;
@@ -445,9 +430,7 @@ ${paymentDetails}
     });
 
     awaitingToCreateMailing[chatId] = false;
-  }
-
-  if (awaitingToAddAdmin[chatId]) {
+  } else if (awaitingToAddAdmin[chatId]) {
     const newAdminId = msg.text;
     if (!admins[newAdminId]) {
       // Добавляем нового администратора в список
@@ -465,9 +448,7 @@ ${paymentDetails}
     }
 
     awaitingToAddAdmin[chatId] = false;
-  }
-
-  if (awaitingToRemoveAdmin[chatId]) {
+  } else if (awaitingToRemoveAdmin[chatId]) {
     const adminIdToRemove = msg.text;
           
     // Проверяем, что этот пользователь действительно является администратором
