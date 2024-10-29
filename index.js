@@ -112,6 +112,8 @@ let awaitingReceipt = {};  // Ожидание чека
 let awaitingPubgId = {};   // Ожидание ввода PUBG ID от пользователя
 let pendingChecks = {};    // Храним информацию о пользователях, чьи чеки ожидают подтверждения
 let awaitingToChangeProduct = {};
+let awaitingNewLabel = {};
+let awaitingNewPrice = {};
 let awaitingToChangeCredentials = {};
 let awaitingUserToChangeBalance = {};
 let awaitingToChangeBalance = {};
@@ -242,6 +244,8 @@ bot.on('message', (msg) => {
     awaitingPubgId[chatId] = false;
     pendingChecks[chatId] = false;
     awaitingToChangeProduct[chatId] = false;
+    awaitingNewLabel[chatId] = false;
+    awaitingNewPrice[chatId] = false;
     awaitingToChangeCredentials[chatId] = false;
     awaitingUserToChangeBalance[chatId] = false;
     awaitingToChangeBalance[chatId] = false;
@@ -348,6 +352,31 @@ ${paymentDetails}
         console.error(error);
     });
       awaitingToChangeProduct[chatId] = false
+  } else if (awaitingNewLabel[chatId]) {
+    const newLabel = msg.text;
+    bot.sendMessage(chatId, `Введите цену для нового товара (${newLabel}): `, cancelMenu);
+
+    awaitingNewLabel[chatId] = false;
+    awaitingNewPrice[chatId] = {newLabel};
+  } else if (awaitingNewPrice[chatId]) {
+    const newPrice = msg.text;
+    const newLabel = awaitingNewPrice[chatId].newLabel
+    products.push({label: newLabel, price: newPrice});
+
+    products.sort((a, b) => {
+      return parseInt(a.label, 10) - parseInt(b.label, 10);
+    });
+
+    database.ref('products').set(products)
+    .then(() => {
+        bot.sendMessage(chatId, `Новый товар ${newLabel} был добавлен по цене ${newPrice}`, menu);
+    })
+    .catch((error) => {
+        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
+        console.error(error);
+    });
+
+    awaitingNewPrice[chatId] = false;
   } else if (awaitingToChangeCredentials[chatId]) {
     paymentDetails = msg.text;
       database.ref('paymentDetails').set(paymentDetails)
@@ -525,19 +554,50 @@ ${paymentDetails}
     }));
 
     // Разбиваем кнопки на строки по 2 кнопки в каждой строке
-    const keyboard = [];
+    const inlineKeyboard = [];
     for (let i = 0; i < productButtons.length; i += 2) {
-      keyboard.push(productButtons.slice(i, i + 2));
+      inlineKeyboard.push(productButtons.slice(i, i + 2));
     }
 
     bot.sendMessage(chatId, 'Выберите товар, который хотите изменить:', {
       reply_markup: {
-        inline_keyboard: keyboard
+        inline_keyboard: inlineKeyboard,
+        keyboard: cancelMenu.reply_markup.keyboard
+      }
+    });
+
+  } else if (text === "Добавить товар ➕") {
+    if (!isAdmin(chatId)) {
+      return; 
+    }
+
+    bot.sendMessage(chatId, 'Напишите название нового товара: ', cancelMenu);
+
+    awaitingNewLabel[chatId] = true;
+  } else if (text === "Удалить товар ➖") {
+    if (!isAdmin(chatId)) {
+      return; 
+    }
+
+    const productButtons = products.map(product => ({
+      text: `${product.label} UC - ${product.price}₽`,  // Отображаем метку и имя товара
+      callback_data: `delete_product_${product.label}`  // Уникальный callback_data для каждого товара
+    }));
+
+    // Разбиваем кнопки на строки по 2 кнопки в каждой строке
+    const inlineKeyboard = [];
+    for (let i = 0; i < productButtons.length; i += 2) {
+      inlineKeyboard.push(productButtons.slice(i, i + 2));
+    }
+
+    bot.sendMessage(chatId, 'Выберите товар, который хотите удалить:', {
+      reply_markup: {
+        inline_keyboard: inlineKeyboard,
+        keyboard: cancelMenu.reply_markup.keyboard
       }
     });
 
   } else if (text === 'Редактировать реквизиты 💳') {
-    const chatId = msg.chat.id;
     if (!isAdmin(chatId)) {
       return; 
     }
@@ -546,7 +606,6 @@ ${paymentDetails}
 
     awaitingToChangeCredentials[chatId] = true;
   } else if (text === 'Редактировать баланс 💳') {
-    const chatId = msg.chat.id;
     if (!isAdmin(chatId)) {
       return; 
     }
@@ -686,6 +745,27 @@ bot.on('callback_query', (query) => {
       bot.sendMessage(chatId, `Введите новую цену для товара ${label} UC:`, cancelMenu);
 
       awaitingToChangeProduct[chatId] = {product}
+  } else if (data.startsWith('delete_product_')) {
+    const labelToDelete = data.replace('delete_product_', '');
+
+    // Проверка наличия товара
+    const product = products.find(p => p.label === label);
+    if (!product) {
+        bot.sendMessage(chatId, `Товар с меткой ${label} не найден.`);
+        return;
+    }
+
+    const index = products.findIndex(product => product.label === labelToDelete);
+
+  // Проверяем, найден ли товар
+  if (index !== -1) {
+    // Удаляем товар из массива
+    products.splice(index, 1);
+    console.log(`Товар с label ${labelToDelete} был удален.`);
+  } else {
+    console.log(`Товар с label ${labelToDelete} не найден.`);
+  }
+
   } else if (data === 'deposit') {
     // Бот запрашивает сумму для пополнения
     bot.sendMessage(chatId, 'Введите сумму, на которую вы хотите пополнить баланс:', cancelMenu);
