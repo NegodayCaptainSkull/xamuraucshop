@@ -536,7 +536,7 @@ ${paymentDetails}
 
     // Создаем инлайн-клавиатуру с кнопками для каждого товара
     const productButtons = products.map(product => ({
-      text: `${product.label} - ${product.price}`,  // Отображаем метку и имя товара
+      text: `${product.label} UC - ${product.price}₽`,  // Отображаем метку и имя товара
       callback_data: `edit_product_${product.label}`  // Уникальный callback_data для каждого товара
     }));
 
@@ -699,7 +699,7 @@ bot.on('callback_query', (query) => {
           return;
       }
 
-      bot.sendMessage(chatId, `Введите новую цену для товара ${product.price}:`);
+      bot.sendMessage(chatId, `Введите новую цену для товара ${label} UC:`, cancelMenu);
 
       awaitingToChangeProduct[chatId] = {product}
   } else if (data === 'deposit') {
