@@ -326,23 +326,23 @@ ${paymentDetails}
   }
 
   if (awaitingToChangeProduct[chatId]) {
-    const product = awaitingToChangeProduct.product;
+    const product = awaitingToChangeProduct[chatId].product;
     const newPrice = parseFloat(msg.text);
-          if (isNaN(newPrice)) {
-              bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.');
-              return;
-          }
+    if (isNaN(newPrice)) {
+        bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.');
+        return;
+    }
 
-          // Обновляем цену товара
-          product.price = newPrice;
-          database.ref('products').set(products)
-          .then(() => {
-              bot.sendMessage(chatId, `Цена товара ${product.name} (метка ${label}) была изменена на ${newPrice}₽.`);
-          })
-          .catch((error) => {
-              bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.');
-              console.error(error);
-          });
+    // Обновляем цену товара
+    product.price = newPrice;
+    database.ref('products').set(products)
+    .then(() => {
+        bot.sendMessage(chatId, `Цена товара ${product.name} (метка ${label}) была изменена на ${newPrice}₽.`);
+    })
+    .catch((error) => {
+        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.');
+        console.error(error);
+    });
       awaitingToChangeProduct[chatId] = false
   }
 
@@ -526,7 +526,7 @@ ${paymentDetails}
 
     // Создаем инлайн-клавиатуру с кнопками для каждого товара
     const productButtons = products.map(product => ({
-      text: `${product.label} - ${product.name}`,  // Отображаем метку и имя товара
+      text: `${product.label} - ${product.price}`,  // Отображаем метку и имя товара
       callback_data: `edit_product_${product.label}`  // Уникальный callback_data для каждого товара
     }));
 
@@ -689,7 +689,7 @@ bot.on('callback_query', (query) => {
           return;
       }
 
-      bot.sendMessage(chatId, `Введите новую цену для товара ${product.name}:`);
+      bot.sendMessage(chatId, `Введите новую цену для товара ${product.price}:`);
 
       awaitingToChangeProduct[chatId] = {product}
   } else if (data === 'deposit') {
