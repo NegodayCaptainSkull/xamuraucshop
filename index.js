@@ -12,18 +12,10 @@ const serviceAccount = require('/etc/secrets/serviceAccountKey.json');
 const token = process.env.token;
 const bot = new TelegramApi(token);
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBtHCM_DxBzOc-uAzzJbgvl9uWCbr2NlTA",
-  authDomain: "test-shop-c86c0.firebaseapp.com",
+admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://test-shop-c86c0-default-rtdb.firebaseio.com",
-  projectId: "test-shop-c86c0",
-  storageBucket: "test-shop-c86c0.appspot.com",
-  messagingSenderId: "442194480617",
-  appId: "1:442194480617:web:498da288a16a4d6d828f78"
-};
-
-admin.initializeApp(firebaseConfig);
+});
 
 // Получаем доступ к Realtime Database
 const database = admin.database();
