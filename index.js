@@ -366,6 +366,8 @@ ${paymentDetails}
           bot.sendMessage(chatId, 'Ошибка сохранения реквизитов в Firebase.', menu);
           console.error(error);
     });
+
+    awaitingToChangeCredentials[chatId] = false;
   }
 
   if (awaitingUserToChangeBalance[chatId]) {
