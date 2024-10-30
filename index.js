@@ -109,7 +109,7 @@ database.ref('userBalances').once('value').then((snapshot) => {
 let bonusRate = 0.01
 
 database.ref('bonusRate').once('value').then((snapshot) => {
-  userBalances = snapshot.val() || 0.01;
+  bonusRate = snapshot.val() || 0.01;
 });
 
 // Для ожидания суммы пополнения и отправки чека
