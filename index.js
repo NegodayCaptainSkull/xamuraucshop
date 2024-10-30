@@ -409,7 +409,7 @@ ${paymentDetails}
     const bonusRatePercentage = (bonusRate * 100).toFixed(1);
     database.ref('bonusRate').set(bonusRate)
       .then(() => {
-        bot.sendMessage(chatId, `Реферальный бонус был изменен ${bonusRatePercentage}%`)
+        bot.sendMessage(chatId, `Реферальный бонус был изменен ${bonusRatePercentage}%`, menu)
       })
       .catch((error) => {
         bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
