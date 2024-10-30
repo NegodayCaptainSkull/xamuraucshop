@@ -397,7 +397,7 @@ ${paymentDetails}
     });
 
     awaitingToChangeCredentials[chatId] = false;
-  } else if (awaitingBonusRate) {
+  } else if (awaitingBonusRate[chatId]) {
     const newBonusRate = parseFloat(msg.text) / 100;
 
     if (isNaN(newBonusRate)) {
@@ -414,6 +414,8 @@ ${paymentDetails}
         bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
         console.error(error);
       });
+    
+    awaitingBonusRate[chatId] = false;
   } else if (awaitingUserToChangeBalance[chatId]) {
     const userId = msg.text; // Получаем ID пользователя
     
