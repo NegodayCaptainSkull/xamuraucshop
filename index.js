@@ -106,6 +106,12 @@ database.ref('userBalances').once('value').then((snapshot) => {
   userBalances = snapshot.val() || {};
 });
 
+let bonusRate = 0.01
+
+database.ref('bonusRate').once('value').then((snapshot) => {
+  userBalances = snapshot.val() || 0.01;
+});
+
 // Для ожидания суммы пополнения и отправки чека
 let awaitingDeposit = {};  // Ожидание суммы для пополнения
 let awaitingReceipt = {};  // Ожидание чека
@@ -114,6 +120,7 @@ let pendingChecks = {};    // Храним информацию о пользо�
 let awaitingToChangeProduct = {};
 let awaitingNewLabel = {};
 let awaitingNewPrice = {};
+let awaitingBonusRate = {};
 let awaitingToChangeCredentials = {};
 let awaitingUserToChangeBalance = {};
 let awaitingToChangeBalance = {};
@@ -154,7 +161,7 @@ const adminActionsMenu = {
   reply_markup: {
     keyboard: [
       [{ text: 'Редактировать товары 🛠️' }, { text: 'Добавить товар ➕' }, { text: 'Удалить товар ➖' }],
-      [{ text: 'Редактировать реквизиты 💳' }],
+      [{ text: 'Редактировать реквизиты 💳' }, { text: 'Редактировать реферальный %' }],
       [{ text: 'Редактировать баланс 💳' }],
       [{ text: 'Сделать рассылку ✉️' }],
       [{ text: 'Добавить администратора 👤' }, { text: 'Удалить администратора 🗑️' }],
@@ -246,6 +253,7 @@ bot.on('message', (msg) => {
     awaitingToChangeProduct[chatId] = false;
     awaitingNewLabel[chatId] = false;
     awaitingNewPrice[chatId] = false;
+    awaitingBonusRate[chatId] = false;
     awaitingToChangeCredentials[chatId] = false;
     awaitingUserToChangeBalance[chatId] = false;
     awaitingToChangeBalance[chatId] = false;
@@ -389,6 +397,23 @@ ${paymentDetails}
     });
 
     awaitingToChangeCredentials[chatId] = false;
+  } else if (awaitingBonusRate) {
+    const newBonusRate = parseFloat(msg.text) / 100;
+
+    if (isNaN(newBonusRate)) {
+      bot.sendMessage(chatId, 'Пожалуйста, введите корректный процент.', menu);
+      return;
+    }
+
+    bonusRate = newBonusRate;
+    database.ref('bonusRate').set(bonusRate)
+      .then(() => {
+        bot.sendMessage(chatId, `Реферальный бонус был изменен ${bonusRate * 100}%`)
+      })
+      .catch((error) => {
+        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
+        console.error(error);
+      });
   } else if (awaitingUserToChangeBalance[chatId]) {
     const userId = msg.text; // Получаем ID пользователя
     
@@ -530,7 +555,7 @@ ${paymentDetails}
   } else if (text === 'Реферальная система 🔗') {
     const referralLink = `https://t.me/XaMuRaSHOP_bot?start=${chatId}`;
 
-    bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Пригласите друзей и получайте бонусы за их покупки!`);
+    bot.sendMessage(chatId, `Ваша реферальная ссылка: ${referralLink}. Пригласите друзей и получайте бонусы за их покупки! С каждого пополнения вашего друга вы получите ${bonusRate * 100}% на ваш баланс`);
   } else if (text === 'Меню администратора ⚙️') {
     if (!isAdmin(chatId)) {
       return; 
@@ -603,6 +628,14 @@ ${paymentDetails}
     bot.sendMessage(chatId, 'Введите новые реквизиты для пополнения:', cancelMenu);
 
     awaitingToChangeCredentials[chatId] = true;
+  } else if (text === 'Редактировать реферальный %') {
+    if (!isAdmin(chatId)) {
+      return; 
+    }
+
+    bot.sendMessage(chatId, 'Введите новый бонус для рефералов в процентах:', cancelMenu)
+
+    awaitingBonusRate[chatId] = true;
   } else if (text === 'Редактировать баланс 💳') {
     if (!isAdmin(chatId)) {
       return; 
@@ -666,7 +699,7 @@ bot.on('callback_query', (query) => {
         if (snapshot.exists()) {
           const referralData = snapshot.val();
           const referrerId = referralData[Object.keys(referralData)[0]];  // Получаем ID реферера
-          const bonus = depositAmount * 0.005;  // 0.5% бонус
+          const bonus = depositAmount * bonusRate;
 
           // Начисляем бонус рефереру
           userBalances[referrerId] = (userBalances[referrerId] || 0) + bonus;
