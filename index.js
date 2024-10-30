@@ -406,9 +406,10 @@ ${paymentDetails}
     }
 
     bonusRate = newBonusRate;
+    const bonusRatePercentage = (bonusRate * 100).toFixed(1);
     database.ref('bonusRate').set(bonusRate)
       .then(() => {
-        bot.sendMessage(chatId, `Реферальный бонус был изменен ${bonusRate * 100}%`)
+        bot.sendMessage(chatId, `Реферальный бонус был изменен ${bonusRatePercentage}%`)
       })
       .catch((error) => {
         bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
@@ -701,7 +702,7 @@ bot.on('callback_query', (query) => {
         if (snapshot.exists()) {
           const referralData = snapshot.val();
           const referrerId = referralData[Object.keys(referralData)[0]];  // Получаем ID реферера
-          const bonus = depositAmount * bonusRate;
+          const bonus = (depositAmount * bonusRate).toFixed(3);
 
           // Начисляем бонус рефереру
           userBalances[referrerId] = (userBalances[referrerId] || 0) + bonus;
