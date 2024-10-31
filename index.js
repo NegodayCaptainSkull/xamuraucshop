@@ -702,7 +702,7 @@ bot.on('callback_query', (query) => {
         if (snapshot.exists()) {
           const referralData = snapshot.val();
           const referrerId = referralData[Object.keys(referralData)[0]];  // Получаем ID реферера
-          const bonus = (depositAmount * bonusRate).toFixed(3);
+          const bonus = parseFloat((depositAmount * bonusRate).toFixed(3));
 
           // Начисляем бонус рефереру
           userBalances[referrerId] = (userBalances[referrerId] || 0) + bonus;
