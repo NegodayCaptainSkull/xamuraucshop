@@ -292,8 +292,7 @@ bot.on('message', (msg) => {
         reply_markup: {
           inline_keyboard: [
             [{ text: 'Пополнить баланс', callback_data: 'deposit' }],
-          ],
-          keyboard: menu.reply_markup.keyboard,
+          ]
         },
       });
     }
