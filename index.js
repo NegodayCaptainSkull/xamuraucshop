@@ -118,8 +118,8 @@ let awaitingReceipt = {};  // Ожидание чека
 let awaitingPubgId = {};   // Ожидание ввода PUBG ID от пользователя
 let pendingChecks = {};    // Храним информацию о пользователях, чьи чеки ожидают подтверждения
 let awaitingToChangeProduct = {};
-let awaitingNewLabel = {};
-let awaitingNewPrice = {};
+let awaitingNewProductLabel = {};
+let awaitingNewProductPrice = {};
 let awaitingBonusRate = {};
 let awaitingToChangeCredentials = {};
 let awaitingUserToChangeBalance = {};
@@ -251,8 +251,8 @@ bot.on('message', (msg) => {
     awaitingPubgId[chatId] = false;
     pendingChecks[chatId] = false;
     awaitingToChangeProduct[chatId] = false;
-    awaitingNewLabel[chatId] = false;
-    awaitingNewPrice[chatId] = false;
+    awaitingNewProductLabel[chatId] = false;
+    awaitingNewProductPrice[chatId] = false;
     awaitingBonusRate[chatId] = false;
     awaitingToChangeCredentials[chatId] = false;
     awaitingUserToChangeBalance[chatId] = false;
@@ -270,6 +270,7 @@ bot.on('message', (msg) => {
     const pubgId = text; // Получаем ID пользователя в PUBG
     const purchaseInfo = awaitingPubgId[chatId];
     const itemPrice = purchaseInfo.price;
+    const label = purchaseInfo.label;
 
     // Проверяем баланс пользователя
     if (userBalances[chatId] >= itemPrice) {
@@ -279,7 +280,7 @@ bot.on('message', (msg) => {
       database.ref('userBalances').set(userBalances);
 
       // Отправляем информацию администратору с ID PUBG и товаром
-      sendMessageToAllAdmins(`Пользователь ${userTag} (ID: ${chatId}) ввел PUBG ID: ${pubgId} для товара на сумму ${itemPrice}₽. Средства списаны с баланса.`, [
+      sendMessageToAllAdmins(`Пользователь ${userTag} (ID: ${chatId}) ввел PUBG ID: ${pubgId} для товара ${label}UC на сумму ${itemPrice}₽. Средства списаны с баланса.`, [
         [{ text: 'Заказ выполнен', callback_data: `order_completed_${chatId}` }],
       ])
 
@@ -359,7 +360,7 @@ ${paymentDetails}
         console.error(error);
     });
       awaitingToChangeProduct[chatId] = false
-  } else if (awaitingNewLabel[chatId]) {
+  } else if (awaitingNewProductLabel[chatId]) {
     const newLabel = parseFloat(msg.text);
     if (isNaN(newLabel)) {
       bot.sendMessage(chatId, 'Пожалуйста, введите название продукта числом');
@@ -367,10 +368,10 @@ ${paymentDetails}
     }
     bot.sendMessage(chatId, `Введите цену для нового товара (${newLabel}): `, cancelMenu);
 
-    awaitingNewLabel[chatId] = false;
-    awaitingNewPrice[chatId] = {newLabel};
-  } else if (awaitingNewPrice[chatId]) {
-    const newLabel = awaitingNewPrice[chatId].newLabel
+    awaitingNewProductLabel[chatId] = false;
+    awaitingNewProductPrice[chatId] = {newLabel};
+  } else if (awaitingNewProductPrice[chatId]) {
+    const newLabel = awaitingNewProductPrice[chatId].newLabel
     const newPrice = msg.text;
     if (isNaN(newPrice)) {
       bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену');
@@ -392,7 +393,7 @@ ${paymentDetails}
         console.error(error);
     });
 
-    awaitingNewPrice[chatId] = false;
+    awaitingNewProductPrice[chatId] = false;
   } else if (awaitingToChangeCredentials[chatId]) {
     paymentDetails = msg.text;
       database.ref('paymentDetails').set(paymentDetails)
@@ -612,7 +613,7 @@ ${paymentDetails}
 
     bot.sendMessage(chatId, 'Напишите название нового товара: ', cancelMenu);
 
-    awaitingNewLabel[chatId] = true;
+    awaitingNewProductLabel[chatId] = true;
   } else if (text === "Удалить товар ➖") {
     if (!isAdmin(chatId)) {
       return; 
@@ -807,7 +808,14 @@ bot.on('callback_query', (query) => {
   if (index !== -1) {
     // Удаляем товар из массива
     products.splice(index, 1);
-    bot.sendMessage(chatId, `Товар ${labelToDelete}UC был удален.`);
+    database.ref('products').set(products)
+    .then(() => {
+        bot.sendMessage(chatId, `Товар ${labelToDelete}UC был удален.`, menu);
+    })
+    .catch((error) => {
+        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
+        console.error(error);
+    });
   } else {
     bot.sendMessage(chatId, `Товар ${labelToDelete}UC не найден.`);
   }
