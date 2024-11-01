@@ -498,7 +498,7 @@ ${paymentDetails}
   } else if (awaitingToAddAdmin[chatId]) {
     const newAdminId = msg.text;
     if (!userBalances.hasOwnProperty(newAdminId)) {
-      bot.sendMessage(chatId, `Пользователь с ID ${newAdminId} не существует. Пожалуйста, проверьте введенный ID и попробуйте еще раз. Возможно пользователь не зарегистрирован в боте`);
+      bot.sendMessage(chatId, `Пользователь с ID "${newAdminId}" не существует. Пожалуйста, проверьте введенный ID и попробуйте еще раз. Возможно пользователь не зарегистрирован в боте`);
       return;
     }
     if (!admins[newAdminId]) {
@@ -807,9 +807,9 @@ bot.on('callback_query', (query) => {
   if (index !== -1) {
     // Удаляем товар из массива
     products.splice(index, 1);
-    bot.sendMessage(chatId, `Товар с label ${labelToDelete} был удален.`);
+    bot.sendMessage(chatId, `Товар ${labelToDelete}UC был удален.`);
   } else {
-    bot.sendMessage(chatId, `Товар с label ${labelToDelete} не найден.`);
+    bot.sendMessage(chatId, `Товар ${labelToDelete}UC не найден.`);
   }
 
   } else if (data === 'deposit') {
