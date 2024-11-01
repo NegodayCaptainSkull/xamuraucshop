@@ -344,7 +344,7 @@ ${paymentDetails}
     const product = awaitingToChangeProduct[chatId].product;
     const newPrice = parseFloat(msg.text);
     if (isNaN(newPrice)) {
-        bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.', menu);
+        bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену.');
         return;
     }
 
@@ -360,14 +360,23 @@ ${paymentDetails}
     });
       awaitingToChangeProduct[chatId] = false
   } else if (awaitingNewLabel[chatId]) {
-    const newLabel = msg.text;
+    const newLabel = parseFloat(msg.text);
+    if (isNaN(newLabel)) {
+      bot.sendMessage(chatId, 'Пожалуйста, введите название продукта числом');
+      return;
+    }
     bot.sendMessage(chatId, `Введите цену для нового товара (${newLabel}): `, cancelMenu);
 
     awaitingNewLabel[chatId] = false;
     awaitingNewPrice[chatId] = {newLabel};
   } else if (awaitingNewPrice[chatId]) {
-    const newPrice = msg.text;
     const newLabel = awaitingNewPrice[chatId].newLabel
+    const newPrice = msg.text;
+    if (isNaN(newPrice)) {
+      bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену');
+      return;
+    }
+
     products.push({label: newLabel, price: newPrice});
 
     products.sort((a, b) => {
@@ -400,7 +409,7 @@ ${paymentDetails}
     const newBonusRate = parseFloat(msg.text) / 100;
 
     if (isNaN(newBonusRate)) {
-      bot.sendMessage(chatId, 'Пожалуйста, введите корректный процент.', menu);
+      bot.sendMessage(chatId, 'Пожалуйста, введите корректный процент.');
       return;
     }
 
@@ -428,7 +437,7 @@ ${paymentDetails}
     const userId = awaitingToChangeBalance[chatId].userId
 
     if (isNaN(newBalance)) {
-      bot.sendMessage(chatId, 'Пожалуйста, введите корректную сумму.', menu);
+      bot.sendMessage(chatId, 'Пожалуйста, введите корректную сумму.');
       return;
     }
 
@@ -488,6 +497,10 @@ ${paymentDetails}
     awaitingToCreateMailing[chatId] = false;
   } else if (awaitingToAddAdmin[chatId]) {
     const newAdminId = msg.text;
+    if (!userBalances.hasOwnProperty(newAdminId)) {
+      bot.sendMessage(chatId, `Пользователь с ID ${newAdminId} не существует. Пожалуйста, проверьте введенный ID и попробуйте еще раз. Возможно пользователь не зарегистрирован в боте`);
+      return;
+    }
     if (!admins[newAdminId]) {
       // Добавляем нового администратора в список
       admins[newAdminId] = true;
