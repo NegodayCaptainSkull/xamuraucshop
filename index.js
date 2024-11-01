@@ -361,18 +361,14 @@ ${paymentDetails}
     });
       awaitingToChangeProduct[chatId] = false
   } else if (awaitingNewProductLabel[chatId]) {
-    const newLabel = parseFloat(msg.text);
-    if (isNaN(newLabel)) {
-      bot.sendMessage(chatId, 'Пожалуйста, введите название продукта числом');
-      return;
-    }
+    const newLabel = msg.text;
     bot.sendMessage(chatId, `Введите цену для нового товара (${newLabel}): `, cancelMenu);
 
     awaitingNewProductLabel[chatId] = false;
     awaitingNewProductPrice[chatId] = {newLabel};
   } else if (awaitingNewProductPrice[chatId]) {
     const newLabel = awaitingNewProductPrice[chatId].newLabel
-    const newPrice = msg.text;
+    const newPrice = parseFloat(msg.text);
     if (isNaN(newPrice)) {
       bot.sendMessage(chatId, 'Пожалуйста, введите корректную цену');
       return;
