@@ -806,10 +806,10 @@ bot.on('callback_query', (query) => {
     products.splice(index, 1);
     database.ref('products').set(products)
     .then(() => {
-        bot.sendMessage(chatId, `Товар ${labelToDelete}UC был удален.`, menu);
+        bot.sendMessage(chatId, `Товар ${labelToDelete}UC был удален.`);
     })
     .catch((error) => {
-        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.', menu);
+        bot.sendMessage(chatId, 'Ошибка сохранения данных в Firebase.');
         console.error(error);
     });
   } else {
